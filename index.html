@@ -28,6 +28,46 @@
             transition: 0.2s;
             border: 2px solid transparent;
         }
+        .table-card:hoverSizning talablaringizga asosan saytning dizayni va ishlash tizimini saqlab qolgan holda kerakli o'zgartirishlarni kiritdim. 
+
+**Nimalar o'zgardi:**
+1. Stollar ro'yxati siz aytgandek teskarisiga (11-Stol, 12-Stol, 9-Stol, 10-Stol... 1-Stol, 2-Stol) ko'rinishida joylashtirildi.
+2. Oynaning pastki qismiga, "Stolni tozalash" tugmasi tagiga **"Buyurtma mijozga berildi"** va **"Yana buyurtma berdi"** tugmalari qo'shildi. 
+3. "Buyurtma mijozga berildi" bosilsa, stol navbatdan (1-beriladi ro'yxatidan) tushadi, lekin buyurtma summasi saqlanib turadi. Agar mijoz yana nimadir qo'shib aytsa, "Yana buyurtma berdi" tugmasi bosiladi va u yana navbatning oxiriga qo'shiladi.
+
+Mana tayyor to'liq kod:
+
+```html
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kafe Buyurtmalari</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f4f7f6; margin: 0; padding: 15px; }
+        h1 { text-align: center; color: #333; margin-bottom: 20px; font-size: 24px; }
+        
+        /* Stollar dizayni (2 qator uzunasiga) */
+        .tables-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .table-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: 0.2s;
+            border: 2px solid transparent;
+        }
         .table-card:hover { border-color: #4CAF50; transform: translateY(-2px); }
         .table-card.active { background-color: #e8f5e9; border-color: #4CAF50; }
         .table-number { font-size: 22px; font-weight: bold; color: #2c3e50; }
@@ -70,11 +110,23 @@
         .modal-footer { margin-top: 20px; text-align: center; }
         .total-display { font-size: 20px; font-weight: bold; margin-bottom: 15px; color: #2c3e50; }
         
+        /* Yangi tugmalar dizayni */
         .btn-clear {
             width: 100%; padding: 12px; background: #ff4757; color: white;
             border: none; border-radius: 8px; font-size: 16px; font-weight: bold;
+            cursor: pointer; margin-bottom: 10px;
+        }
+        .btn-served {
+            width: 100%; padding: 12px; background: #2ecc71; color: white;
+            border: none; border-radius: 8px; font-size: 16px; font-weight: bold;
+            cursor: pointer; margin-bottom: 10px;
+        }
+        .btn-again {
+            width: 100%; padding: 12px; background: #f39c12; color: white;
+            border: none; border-radius: 8px; font-size: 16px; font-weight: bold;
             cursor: pointer;
         }
+        
     </style>
 </head>
 <body>
@@ -88,7 +140,7 @@
     <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
         <div class="modal" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <div class="modal-title" id="modalTitle">1-Stol buyurtmalari</div>
+                <div class="modal-title" id="modalTitle">Stol buyurtmalari</div>
                 <button class="close-btn" onclick="closeModal(true)">&times;</button>
             </div>
             
@@ -99,6 +151,8 @@
             <div class="modal-footer">
                 <div class="total-display">Umumiy: <span id="modalTotal">0</span> so'm</div>
                 <button class="btn-clear" onclick="clearTable()">Stolni tozalash (O'chirish)</button>
+                <button class="btn-served" onclick="markAsServed()">Buyurtma mijozga berildi</button>
+                <button class="btn-again" onclick="markAsOrderedAgain()">Yana buyurtma berdi</button>
             </div>
         </div>
     </div>
@@ -123,22 +177,23 @@
         let orders = JSON.parse(localStorage.getItem('kafeOrders')) || {};
         let tableQueue = JSON.parse(localStorage.getItem('kafeQueue')) || [];
         
-        // 12 ta stol uchun bo'sh obyektlar yaratish
         for (let i = 1; i <= 12; i++) {
             if (!orders[i]) orders[i] = {};
         }
 
         let currentTable = null;
 
-        // Raqamlarni probel bilan chiroyli yozish uchun
         const formatMoney = (sum) => sum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
-        // Stollarni chizish
+        // Stollarni chizish (Siz so'ragan tartibda: 11,12 - 9,10...)
         function renderTables() {
             const container = document.getElementById('tablesContainer');
             container.innerHTML = '';
             
-            for (let i = 1; i <= 12; i++) {
+            // Teskari tartibdagi massiv:
+            const tableOrder = [11, 12, 9, 10, 7, 8, 5, 6, 3, 4, 1, 2];
+            
+            tableOrder.forEach(i => {
                 let total = calculateTableTotal(i);
                 
                 // Navbatni aniqlash
@@ -157,7 +212,7 @@
                     </div>
                 `;
                 container.appendChild(card);
-            }
+            });
         }
 
         // 1 ta stolning jami summasini hisoblash
@@ -231,13 +286,11 @@
 
             const afterTotal = calculateTableTotal(currentTable);
 
-            // Agar stol noldan boshlab buyurtma qilsa, navbatga qoshamiz
             if (beforeTotal === 0 && afterTotal > 0) {
                 if (!tableQueue.includes(currentTable)) {
                     tableQueue.push(currentTable);
                 }
             } 
-            // Agar hamma narsa minus qilinib 0 bo'lib qolsa, navbatdan olib tashlaymiz
             else if (beforeTotal > 0 && afterTotal === 0) {
                 tableQueue = tableQueue.filter(t => t !== currentTable);
             }
@@ -246,7 +299,6 @@
             renderMenu();
         }
 
-        // Oynadagi jami summani yangilash
         function updateModalTotal() {
             const total = calculateTableTotal(currentTable);
             document.getElementById('modalTotal').innerText = formatMoney(total);
@@ -257,10 +309,28 @@
             const conf = confirm(`${currentTable}-Stol buyurtmalarini o'chirmoqchimisiz?`);
             if (conf) {
                 orders[currentTable] = {};
-                // Stol tozalanganda uni navbatdan olib tashlaymiz
                 tableQueue = tableQueue.filter(t => t !== currentTable);
                 saveData();
                 renderMenu();
+            }
+        }
+
+        // "Buyurtma mijozga berildi" (Navbatdan olib tashlash)
+        function markAsServed() {
+            if (tableQueue.includes(currentTable)) {
+                tableQueue = tableQueue.filter(t => t !== currentTable);
+                saveData();
+                renderTables(); // Orqa fondagi o'zgarish sezilishi uchun
+            }
+        }
+
+        // "Yana buyurtma berdi" (Yangi navbatga qo'shish)
+        function markAsOrderedAgain() {
+            const total = calculateTableTotal(currentTable);
+            if (total > 0 && !tableQueue.includes(currentTable)) {
+                tableQueue.push(currentTable);
+                saveData();
+                renderTables(); 
             }
         }
 
@@ -275,3 +345,4 @@
     </script>
 </body>
 </html>
+
