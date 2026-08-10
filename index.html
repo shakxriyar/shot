@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ofitsiant Yordamchisi</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 15px;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            color: #2c3e50;
+        }
+        /* Stollar joylashuvi (2 qator, uzunasiga) */
+        .tables-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .table-btn {
+            background-color: #fff;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            padding: 25px 10px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: 0.2s;
+        }
+        .table-btn.active-orders {
+            border-color: #27ae60;
+            background-color: #eafaf1;
+            color: #27ae60;
+        }
+        /* Modal oyna (Buyurtmalar paneli) */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .modal-header h2 {
+            margin: 0;
+            font-size: 22px;
+        }
+        .close-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        /* Menyu elementlari */
+        .menu-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f1f1;
+        }
+        .item-name {
+            font-size: 16px;
+            font-weight: 500;
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .control-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 5px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .control-btn:active {
+            background-color: #2980b9;
+        }
+        .quantity {
+            font-size: 18px;
+            font-weight: bold;
+            min-width: 25px;
+            text-align: center;
+        }
+        /* O'chirish tugmasi */
+        .clear-btn {
+            width: 100%;
+            background-color: #e67e22;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Kafedagi Stollar</h1>
+    
+    <!-- Stollar joylashuvi -->
+    <div class="tables-grid" id="tables-container">
+        <!-- JS orqali stollar yaratiladi -->
+    </div>
+
+    <!-- Buyurtma berish oynasi -->
+    <div class="modal" id="order-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="current-table-title">Stol</h2>
+                <button class="close-btn" onclick="closeModal()">Yopish</button>
+            </div>
+            
+            <div id="menu-container">
+                <!-- JS orqali menyu yaratiladi -->
+            </div>
+
+            <button class="clear-btn" onclick="clearCurrentTable()">Buyurtmalarni Tozalash</button>
+        </div>
+    </div>
+
+    <script>
+        // Menyu ro'yxati
+        const menuItems = [
+            "Qopoq somsa",
+            "Tomchi somsa",
+            "Cola 0.25",
+            "Cola 0.5",
+            "Cola 1",
+            "Cola 1.5",
+            "Fanta 1",
+            "Fanta 1.5",
+            "Pepsi 1.75",
+            "Bezgaz 1",
+            "Ark tea 1.25"
+        ];
+
+        // 12 ta stol ma'lumotlarini saqlash uchun obyekt
+        let tablesData = {};
+        for (let i = 1; i <= 12; i++) {
+            tablesData[i] = {};
+            menuItems.forEach(item => {
+                tablesData[i][item] = 0; // Boshida hamma narsa 0 ta
+            });
+        }
+
+        let currentTableId = null;
+
+        // Stollarni chizish
+        function renderTables() {
+            const container = document.getElementById('tables-container');
+            container.innerHTML = '';
+            
+            for (let i = 1; i <= 12; i++) {
+                let hasOrders = false;
+                for (let item in tablesData[i]) {
+                    if (tablesData[i][item] > 0) hasOrders = true;
+                }
+
+                const btn = document.createElement('div');
+                btn.className = `table-btn ${hasOrders ? 'active-orders' : ''}`;
+                btn.innerText = `${i} - Stol`;
+                btn.onclick = () => openModal(i);
+                container.appendChild(btn);
+            }
+        }
+
+        // Modalni ochish va menyuni chizish
+        function openModal(tableId) {
+            currentTableId = tableId;
+            document.getElementById('current-table-title').innerText = `${tableId} - Stol Buyurtmalari`;
+            renderMenu();
+            document.getElementById('order-modal').style.display = 'flex';
+        }
+
+        // Modalni yopish
+        function closeModal() {
+            document.getElementById('order-modal').style.display = 'none';
+            renderTables(); // Yopganda stollar rangini yangilaymiz
+        }
+
+        // Menyuni chizish ( - 1 + qismi)
+        function renderMenu() {
+            const container = document.getElementById('menu-container');
+            container.innerHTML = '';
+
+            menuItems.forEach(item => {
+                const count = tablesData[currentTableId][item];
+                
+                const div = document.createElement('div');
+                div.className = 'menu-item';
+                div.innerHTML = `
+                    <div class="item-name">${item}</div>
+                    <div class="controls">
+                        <button class="control-btn" onclick="updateItem('${item}', -1)">-</button>
+                        <div class="quantity">${count}</div>
+                        <button class="control-btn" onclick="updateItem('${item}', 1)">+</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Mahsulot sonini o'zgartirish
+        function updateItem(itemName, change) {
+            let currentCount = tablesData[currentTableId][itemName];
+            let newCount = currentCount + change;
+            
+            if (newCount < 0) newCount = 0; // 0 dan kamayib ketmasligi uchun
+            
+            tablesData[currentTableId][itemName] = newCount;
+            renderMenu(); // O'zgargan sonni ekranda yangilash
+        }
+
+        // Bitta stolni to'liq tozalash
+        function clearCurrentTable() {
+            if(confirm("Haqiqatan ham bu stoldagi barcha buyurtmalarni o'chirmoqchimisiz?")) {
+                menuItems.forEach(item => {
+                    tablesData[currentTableId][item] = 0;
+                });
+                renderMenu();
+            }
+        }
+
+        // Dasturni ishga tushirish
+        renderTables();
+    </script>
+</body>
+</html>
+
