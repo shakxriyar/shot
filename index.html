@@ -119,8 +119,9 @@
             { id: 'ark_tea_125', name: 'Ark tea 1.25L', price: 15000 }
         ];
 
-        // Xotiradan oldingi buyurtmalarni olish yoki yangi ochish
+        // Xotiradan oldingi buyurtmalarni va navbatni olish
         let orders = JSON.parse(localStorage.getItem('kafeOrders')) || {};
+        let tableQueue = JSON.parse(localStorage.getItem('kafeQueue')) || [];
         
         // 12 ta stol uchun bo'sh obyektlar yaratish
         for (let i = 1; i <= 12; i++) {
@@ -129,7 +130,7 @@
 
         let currentTable = null;
 
-        // Raqamlarni probel bilan chiroyli yozish uchun (masalan: 15 000)
+        // Raqamlarni probel bilan chiroyli yozish uchun
         const formatMoney = (sum) => sum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
         // Stollarni chizish
@@ -140,12 +141,20 @@
             for (let i = 1; i <= 12; i++) {
                 let total = calculateTableTotal(i);
                 
+                // Navbatni aniqlash
+                let queueIndex = tableQueue.indexOf(i);
+                let queueHtml = queueIndex !== -1 
+                    ? `<span style="display:block; color:#d35400; font-size:15px; margin-top:5px; font-weight:900;">(${queueIndex + 1}-beriladi)</span>` 
+                    : '';
+                
                 const card = document.createElement('div');
                 card.className = `table-card ${total > 0 ? 'active' : ''}`;
                 card.onclick = () => openModal(i);
                 card.innerHTML = `
                     <div class="table-number">${i}-Stol</div>
-                    <div class="table-total">${total > 0 ? formatMoney(total) + " so'm" : "Bo'sh"}</div>
+                    <div class="table-total">
+                        ${total > 0 ? formatMoney(total) + " so'm" + queueHtml : "Bo'sh"}
+                    </div>
                 `;
                 container.appendChild(card);
             }
@@ -176,7 +185,7 @@
         function closeModal(force = false) {
             if(force || event.target.id === 'modalOverlay') {
                 document.getElementById('modalOverlay').style.display = 'none';
-                renderTables(); // Yopganda stollar yangilanadi
+                renderTables();
             }
         }
 
@@ -207,20 +216,34 @@
             updateModalTotal();
         }
 
-        // Soni o'zgarishi (- / +)
+        // Soni o'zgarishi (- / +) va navbatni boshqarish
         function updateCount(itemId, change) {
+            const beforeTotal = calculateTableTotal(currentTable);
+
             if (!orders[currentTable][itemId]) {
                 orders[currentTable][itemId] = 0;
             }
-            
             orders[currentTable][itemId] += change;
             
             if (orders[currentTable][itemId] < 0) {
                 orders[currentTable][itemId] = 0;
             }
 
+            const afterTotal = calculateTableTotal(currentTable);
+
+            // Agar stol noldan boshlab buyurtma qilsa, navbatga qoshamiz
+            if (beforeTotal === 0 && afterTotal > 0) {
+                if (!tableQueue.includes(currentTable)) {
+                    tableQueue.push(currentTable);
+                }
+            } 
+            // Agar hamma narsa minus qilinib 0 bo'lib qolsa, navbatdan olib tashlaymiz
+            else if (beforeTotal > 0 && afterTotal === 0) {
+                tableQueue = tableQueue.filter(t => t !== currentTable);
+            }
+
             saveData();
-            renderMenu(); // Menyuni darhol yangilash
+            renderMenu();
         }
 
         // Oynadagi jami summani yangilash
@@ -234,6 +257,8 @@
             const conf = confirm(`${currentTable}-Stol buyurtmalarini o'chirmoqchimisiz?`);
             if (conf) {
                 orders[currentTable] = {};
+                // Stol tozalanganda uni navbatdan olib tashlaymiz
+                tableQueue = tableQueue.filter(t => t !== currentTable);
                 saveData();
                 renderMenu();
             }
@@ -242,6 +267,7 @@
         // Ma'lumotlarni xotiraga saqlash
         function saveData() {
             localStorage.setItem('kafeOrders', JSON.stringify(orders));
+            localStorage.setItem('kafeQueue', JSON.stringify(tableQueue));
         }
 
         // Dastlabki ishga tushirish
@@ -249,4 +275,3 @@
     </script>
 </body>
 </html>
-
