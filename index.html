@@ -3,321 +3,250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ofitsiant Yordamchisi</title>
+    <title>Kafe Buyurtmalari</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
-            margin: 0;
-            padding: 15px;
-            color: #333;
-        }
-        h1 {
-            text-align: center;
-            font-size: 24px;
-            color: #2c3e50;
-            margin-bottom: 20px;
-        }
-        /* Stollar joylashuvi */
-        .tables-grid {
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f4f7f6; margin: 0; padding: 15px; }
+        h1 { text-align: center; color: #333; margin-bottom: 20px; font-size: 24px; }
+        
+        /* Stollar dizayni (2 qator uzunasiga) */
+        .tables-container {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(2, 1fr);
             gap: 15px;
             max-width: 600px;
             margin: 0 auto;
         }
-        .table-btn {
-            background-color: #fff;
-            border: 2px solid #ddd;
-            border-radius: 12px;
-            padding: 20px 10px;
-            text-align: center;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            transition: 0.2s;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        .table-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-        .table-total {
-            font-size: 15px;
-            color: #7f8c8d;
-            font-weight: 500;
-        }
-        .table-btn.active-orders {
-            border-color: #27ae60;
-            background-color: #eafaf1;
-        }
-        .table-btn.active-orders .table-title, 
-        .table-btn.active-orders .table-total {
-            color: #27ae60;
-            font-weight: bold;
-        }
         
-        /* Modal oyna */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.6);
-            justify-content: center;
-            align-items: center;
+        .table-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: 0.2s;
+            border: 2px solid transparent;
+        }
+        .table-card:hover { border-color: #4CAF50; transform: translateY(-2px); }
+        .table-card.active { background-color: #e8f5e9; border-color: #4CAF50; }
+        .table-number { font-size: 22px; font-weight: bold; color: #2c3e50; }
+        .table-total { font-size: 16px; color: #e74c3c; margin-top: 10px; font-weight: bold; }
+
+        /* Modal (Oyna) dizayni */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none; justify-content: center; align-items: flex-end;
             z-index: 1000;
         }
-        .modal-content {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 450px;
-            max-height: 90vh;
-            display: flex;
-            flex-direction: column;
+        .modal {
+            background: white; width: 100%; max-width: 600px;
+            border-radius: 20px 20px 0 0; padding: 20px;
+            max-height: 85vh; overflow-y: auto;
+            animation: slideUp 0.3s ease-out;
         }
-        .modal-header {
-            displayAjoyib fikr! Menyudagi barcha narsalarni narxlari bilan kiritib, har bir stol uchun alohida savat va eng pastida **"Umumiy hisob"** chiqadigan qilib kodni to'liq yangiladim.
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px; }
+        .modal-title { font-size: 20px; font-weight: bold; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #7f8c8d; }
 
-Kodni ishlatish uchun HTML fayl yaratib (masalan, `index.html`), quyidagi to'liq kodni uning ichiga tashlang va brauzerda oching. Unda stollar ro'yxati, menyudan tanlash imkoniyati, qo'shilgan narsalar va jami summa avtomatik hisoblanishi tayyor qilingan.
+        /* Menyu elementlari */
+        .menu-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px dashed #ddd; }
+        .item-info { display: flex; flex-direction: column; }
+        .item-name { font-size: 16px; font-weight: 500; }
+        .item-price { font-size: 14px; color: #7f8c8d; }
+        
+        .counter { display: flex; align-items: center; gap: 12px; }
+        .btn-count { 
+            width: 32px; height: 32px; border-radius: 8px; border: none;
+            background: #f0f2f5; font-size: 18px; font-weight: bold; cursor: pointer;
+        }
+        .btn-count.minus { color: #e74c3c; }
+        .btn-count.plus { color: #27ae60; background: #e8f5e9; }
+        .count-display { font-size: 16px; font-weight: bold; width: 20px; text-align: center; }
 
-### Kafe saytining to'liq kodi (HTML + CSS + JavaScript)
-
-```html
-<!DOCTYPE html>
-<html lang="uz">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kafe Buyurtmalar Tizimi</title>
-    <style>
-        /* Asosiy stillar */
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #f0f2f5; 
-            margin: 0; 
-            padding: 20px; 
-            color: #333;
-        }
-        h1 { 
-            text-align: center; 
-            color: #1a1a1a; 
-            margin-bottom: 30px;
-        }
+        .modal-footer { margin-top: 20px; text-align: center; }
+        .total-display { font-size: 20px; font-weight: bold; margin-bottom: 15px; color: #2c3e50; }
         
-        /* Stollar turadigan grid (to'r) strukturasi */
-        .grid-container { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
-            gap: 20px; 
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-        
-        /* Har bir stol kartochkasi */
-        .table-card { 
-            background: #ffffff; 
-            padding: 20px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
-            display: flex;
-            flex-direction: column;
-        }
-        .table-card h2 { 
-            margin-top: 0; 
-            text-align: center; 
-            border-bottom: 2px solid #007bff; 
-            padding-bottom: 10px; 
-            color: #007bff;
-        }
-        
-        /* Forma elementlari */
-        .form-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        select { 
-            flex: 1;
-            padding: 10px; 
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 15px;
-            outline: none;
-        }
-        .add-btn { 
-            background: #28a745; 
-            color: white; 
-            border: none; 
-            padding: 10px 15px;
-            cursor: pointer; 
-            border-radius: 6px; 
-            font-weight: bold;
-            transition: 0.3s;
-        }
-        .add-btn:hover { background: #218838; }
-        
-        /* Buyurtmalar ro'yxati */
-        .orders-list { 
-            list-style: none; 
-            padding: 0; 
-            margin: 0 0 20px 0; 
-            flex-grow: 1;
-            min-height: 100px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-        .orders-list li { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            padding: 8px 0; 
-            border-bottom: 1px dashed #ddd; 
-            font-size: 15px; 
-        }
-        .delete-btn {
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 4px 8px;
-            font-size: 12px;
+        .btn-clear {
+            width: 100%; padding: 12px; background: #ff4757; color: white;
+            border: none; border-radius: 8px; font-size: 16px; font-weight: bold;
             cursor: pointer;
-        }
-        .delete-btn:hover { background: #c82333; }
-        
-        /* Umumiy hisob qismi */
-        .total-section { 
-            font-weight: bold; 
-            font-size: 20px; 
-            color: #d9534f; 
-            text-align: right; 
-            background: #fdf2f2;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #f5c6cb;
         }
     </style>
 </head>
 <body>
 
-    <h1>Kafe Stollar Boshqaruvi</h1>
-    
-    <!-- Stollar shu yerga avtomatik qo'shiladi -->
-    <div class="grid-container" id="tables-container"></div>
+    <h1>KAFE STOLLARI</h1>
+    <div class="tables-container" id="tablesContainer">
+        <!-- Stollar shu yerga JavaScript orqali joylanadi -->
+    </div>
+
+    <!-- Buyurtma oynasi -->
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">1-Stol buyurtmalari</div>
+                <button class="close-btn" onclick="closeModal(true)">&times;</button>
+            </div>
+            
+            <div id="menuContainer">
+                <!-- Menyu shu yerga joylanadi -->
+            </div>
+
+            <div class="modal-footer">
+                <div class="total-display">Umumiy: <span id="modalTotal">0</span> so'm</div>
+                <button class="btn-clear" onclick="clearTable()">Stolni tozalash (O'chirish)</button>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // 1. Siz aytgan narxlar va menyu obyekti
-        const menuItems = [
-            { id: 1, name: "Qopoq somsa", price: 15000 },
-            { id: 2, name: "Tomchi somsa", price: 15000 },
-            { id: 3, name: "Cola 0.25", price: 6000 },
-            { id: 4, name: "Cola 0.5", price: 8000 },
-            { id: 5, name: "Cola 1", price: 15000 },
-            { id: 6, name: "Cola 1.5", price: 18000 },
-            { id: 7, name: "Fanta 1", price: 15000 },
-            { id: 8, name: "Fanta 1.5", price: 18000 },
-            { id: 9, name: "Pepsi 1.75", price: 20000 },
-            { id: 10, name: "Bezgaz suv 1", price: 6000 },
-            { id: 11, name: "Ark tea 1.25", price: 15000 }
+        // Menyu va narxlar
+        const menu = [
+            { id: 'q_somsa', name: 'Qopoq somsa', price: 15000 },
+            { id: 't_somsa', name: 'Tomchi somsa', price: 15000 },
+            { id: 'cola_025', name: 'Cola 0.25L', price: 6000 },
+            { id: 'cola_05', name: 'Cola 0.5L', price: 8000 },
+            { id: 'cola_1', name: 'Cola 1L', price: 15000 },
+            { id: 'cola_15', name: 'Cola 1.5L', price: 18000 },
+            { id: 'fanta_1', name: 'Fanta 1L', price: 15000 },
+            { id: 'fanta_15', name: 'Fanta 1.5L', price: 18000 },
+            { id: 'pepsi_175', name: 'Pepsi 1.75L', price: 20000 },
+            { id: 'bezgaz_1', name: 'Bezgaz suv 1L', price: 6000 },
+            { id: 'ark_tea_125', name: 'Ark tea 1.25L', price: 15000 }
         ];
 
-        // 2. Kafe stollari (masalan, 6 ta stol uchun)
-        const totalTables = 6;
-        let tableOrders = {};
+        // Xotiradan oldingi buyurtmalarni olish yoki yangi ochish
+        let orders = JSON.parse(localStorage.getItem('kafeOrders')) || {};
         
-        // Har bir stol uchun bo'sh massiv yaratib olamiz
-        for (let i = 1; i <= totalTables; i++) {
-            tableOrders[i] = [];
+        // 12 ta stol uchun bo'sh obyektlar yaratish
+        for (let i = 1; i <= 12; i++) {
+            if (!orders[i]) orders[i] = {};
         }
 
-        // Pulingizni chiroyli formatda ko'rsatuvchi funksiya (Masalan: 15 000 so'm)
-        function formatMoney(amount) {
-            return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " so'm";
-        }
+        let currentTable = null;
 
-        // 3. Stollarni va interfeysni ekranga chizish funksiyasi
+        // Raqamlarni probel bilan chiroyli yozish uchun (masalan: 15 000)
+        const formatMoney = (sum) => sum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+
+        // Stollarni chizish
         function renderTables() {
-            const container = document.getElementById('tables-container');
+            const container = document.getElementById('tablesContainer');
             container.innerHTML = '';
-
-            // Menyudagi narsalarni <option> teglari shakliga keltiramiz
-            const menuOptionsHtml = menuItems.map(item => 
-                `<option value="${item.id}">${item.name} - ${formatMoney(item.price)}</option>`
-            ).join('');
-
-            // Barcha stollarni aylanib chiqib kartochka yaratamiz
-            for (let i = 1; i <= totalTables; i++) {
-                let currentOrders = tableOrders[i];
+            
+            for (let i = 1; i <= 12; i++) {
+                let total = calculateTableTotal(i);
                 
-                // Jami summani hisoblash
-                let totalSum = currentOrders.reduce((sum, item) => sum + item.price, 0);
+                const card = document.createElement('div');
+                card.className = `table-card ${total > 0 ? 'active' : ''}`;
+                card.onclick = () => openModal(i);
+                card.innerHTML = `
+                    <div class="table-number">${i}-Stol</div>
+                    <div class="table-total">${total > 0 ? formatMoney(total) + " so'm" : "Bo'sh"}</div>
+                `;
+                container.appendChild(card);
+            }
+        }
 
-                // Stolga qo'shilgan narsalarni ro'yxat shakliga keltirish
-                let ordersHtml = currentOrders.map((item, index) => `
-                    <li>
-                        <span>${item.name}</span>
-                        <span>
-                            ${formatMoney(item.price)} 
-                            <button class="delete-btn" onclick="removeItem(${i}, ${index})">X</button>
-                        </span>
-                    </li>
-                `).join('');
+        // 1 ta stolning jami summasini hisoblash
+        function calculateTableTotal(tableId) {
+            let total = 0;
+            const tableOrders = orders[tableId];
+            for (const itemId in tableOrders) {
+                const menuItem = menu.find(m => m.id === itemId);
+                if (menuItem) {
+                    total += menuItem.price * tableOrders[itemId];
+                }
+            }
+            return total;
+        }
 
-                // Har bir stolning to'liq HTML kodi
-                let cardHtml = `
-                    <div class="table-card">
-                        <h2>${i}-stol</h2>
-                        
-                        <div class="form-group">
-                            <select id="menu-select-${i}">
-                                ${menuOptionsHtml}
-                            </select>
-                            <button class="add-btn" onclick="addItem(${i})">Qo'shish</button>
-                        </div>
-                        
-                        <ul class="orders-list">
-                            ${ordersHtml.length > 0 ? ordersHtml : '<li style="color:#999; border:none;">Buyurtma yo\'q...</li>'}
-                        </ul>
-                        
-                        <div class="total-section">
-                            Umumiy hisob: <br> 
-                            <span>${formatMoney(totalSum)}</span>
-                        </div>
+        // Oynani ochish
+        function openModal(tableId) {
+            currentTable = tableId;
+            document.getElementById('modalTitle').innerText = `${tableId}-Stol buyurtmalari`;
+            renderMenu();
+            document.getElementById('modalOverlay').style.display = 'flex';
+        }
+
+        // Oynani yopish
+        function closeModal(force = false) {
+            if(force || event.target.id === 'modalOverlay') {
+                document.getElementById('modalOverlay').style.display = 'none';
+                renderTables(); // Yopganda stollar yangilanadi
+            }
+        }
+
+        // Menyuni chizish va hisoblagichlarni ulash
+        function renderMenu() {
+            const container = document.getElementById('menuContainer');
+            container.innerHTML = '';
+            
+            menu.forEach(item => {
+                const count = orders[currentTable][item.id] || 0;
+                
+                const div = document.createElement('div');
+                div.className = 'menu-item';
+                div.innerHTML = `
+                    <div class="item-info">
+                        <span class="item-name">${item.name}</span>
+                        <span class="item-price">${formatMoney(item.price)} so'm</span>
+                    </div>
+                    <div class="counter">
+                        <button class="btn-count minus" onclick="updateCount('${item.id}', -1)">-</button>
+                        <span class="count-display">${count}</span>
+                        <button class="btn-count plus" onclick="updateCount('${item.id}', 1)">+</button>
                     </div>
                 `;
-                
-                container.innerHTML += cardHtml;
+                container.appendChild(div);
+            });
+
+            updateModalTotal();
+        }
+
+        // Soni o'zgarishi (- / +)
+        function updateCount(itemId, change) {
+            if (!orders[currentTable][itemId]) {
+                orders[currentTable][itemId] = 0;
+            }
+            
+            orders[currentTable][itemId] += change;
+            
+            if (orders[currentTable][itemId] < 0) {
+                orders[currentTable][itemId] = 0;
+            }
+
+            saveData();
+            renderMenu(); // Menyuni darhol yangilash
+        }
+
+        // Oynadagi jami summani yangilash
+        function updateModalTotal() {
+            const total = calculateTableTotal(currentTable);
+            document.getElementById('modalTotal').innerText = formatMoney(total);
+        }
+
+        // Stolni butunlay tozalash
+        function clearTable() {
+            const conf = confirm(`${currentTable}-Stol buyurtmalarini o'chirmoqchimisiz?`);
+            if (conf) {
+                orders[currentTable] = {};
+                saveData();
+                renderMenu();
             }
         }
 
-        // 4. Stolga narsa qo'shish funksiyasi
-        function addItem(tableId) {
-            const selectElement = document.getElementById(`menu-select-${tableId}`);
-            const selectedId = parseInt(selectElement.value);
-            
-            // Tanlangan narsani bazadan topamiz
-            const selectedMenu = menuItems.find(item => item.id === selectedId);
-            
-            if (selectedMenu) {
-                tableOrders[tableId].push(selectedMenu); // Stolga qo'shamiz
-                renderTables(); // Ekranni yangilaymiz
-            }
+        // Ma'lumotlarni xotiraga saqlash
+        function saveData() {
+            localStorage.setItem('kafeOrders', JSON.stringify(orders));
         }
 
-        // 5. Xato qo'shilib qolgan narsani o'chirish funksiyasi
-        function removeItem(tableId, itemIndex) {
-            tableOrders[tableId].splice(itemIndex, 1);
-            renderTables();
-        }
-
-        // Dastur ishga tushganda birinchi marta ekranni chizish
+        // Dastlabki ishga tushirish
         renderTables();
     </script>
-
 </body>
 </html>
+
